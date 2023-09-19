@@ -14,15 +14,15 @@ ELEVEN_LABS_API_KEY = "a842ce16fb9d66486e6412294dbac613"  # Replace with your El
 class App:
     def __init__(self, root):
         self.root = root
-        self.root.title("ChatGPT to MP3")
+        self.root.title("Delta Weekly Buffet generator")
 
         self.frame = tk.Frame(self.root, padx=20, pady=20)
         self.frame.pack(padx=10, pady=10)
 
-        self.label = tk.Label(self.frame, text="Generate spoken content from ChatGPT")
+        self.label = tk.Label(self.frame, text="Delta Weekly Buffet generator")
         self.label.pack(pady=10)
 
-        self.generate_button = Button(self.frame, text="Generate MP3", command=self.generate_response)
+        self.generate_button = Button(self.frame, text="Serve up the weekly buffet!", command=self.generate_response)
         self.generate_button.pack()
 
     def get_response_from_chatgpt(self, prompt, temperature=0.7):
@@ -64,10 +64,14 @@ class App:
         self.text_widget.insert(tk.END, chatgpt_response)
         self.text_widget.pack(padx=10, pady=10)
 
-        Button(self.preview_window, text="Confirm", command=self.confirm_content).pack(side=tk.LEFT, padx=5)
-        Button(self.preview_window, text="Regenerate", command=self.regenerate_content).pack(side=tk.LEFT, padx=5)
-        Button(self.preview_window, text="Edit", command=self.edit_content).pack(side=tk.LEFT, padx=5)
-        Button(self.preview_window, text="Start Again", command=self.start_again).pack(side=tk.LEFT, padx=5)
+        button_frame = tk.Frame(self.preview_window)  # Create a frame for the buttons
+        button_frame.pack(pady=20)  # Add padding to the frame
+
+        Button(button_frame, text="Confirm", command=self.confirm_content).pack(side=tk.LEFT, padx=5)
+        Button(button_frame, text="Regenerate", command=self.regenerate_content).pack(side=tk.LEFT, padx=5)
+        Button(button_frame, text="Edit", command=self.edit_content).pack(side=tk.LEFT, padx=5)
+        Button(button_frame, text="Start Again", command=self.start_again).pack(side=tk.LEFT, padx=5)
+
 
     def confirm_content(self):
         chatgpt_response = self.text_widget.get("1.0", tk.END).strip()
