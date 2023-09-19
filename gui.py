@@ -1,6 +1,6 @@
 import requests
 import tkinter as tk
-from tkinter import simpledialog, messagebox, Text, Scrollbar
+from tkinter import simpledialog, messagebox, Text, Button
 from datetime import datetime
 
 # OpenAI API details
@@ -11,77 +11,103 @@ OPENAI_API_KEY = "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"  # Replac
 ELEVEN_LABS_API_URL = "https://api.elevenlabs.io/v1/text-to-speech/{voice_id}"  # Replace {voice_id} with desired voice ID
 ELEVEN_LABS_API_KEY = "a842ce16fb9d66486e6412294dbac613"  # Replace with your Eleven Labs API key
 
-def get_response_from_chatgpt(prompt, temperature=0.7):
-    # ... [rest of the function remains unchanged]
+class App:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("ChatGPT to MP3")
 
-def get_spoken_file_from_eleven_labs(text, voice_id):
-    # ... [rest of the function remains unchanged]
+        self.frame = tk.Frame(self.root, padx=20, pady=20)
+        self.frame.pack(padx=10, pady=10)
 
-def content_preview_window(chatgpt_response, user_input):
-    preview_window = tk.Toplevel(root)
-    preview_window.title("Content Preview")
+        self.label = tk.Label(self.frame, text="Generate spoken content from ChatGPT")
+        self.label.pack(pady=10)
 
-    label = tk.Label(preview_window, text="Generated Content:")
-    label.pack(pady=10)
+        self.generate_button = Button(self.frame, text="Generate MP3", command=self.generate_response)
+        self.generate_button.pack()
 
-    text_area = Text(preview_window, wrap=tk.WORD, height=10, width=50)
-    text_area.insert(tk.END, chatgpt_response)
-    text_area.pack(pady=10)
+    def get_response_from_chatgpt(self, prompt, temperature=0.7):
+        headers = {
+            "Authorization": f"Bearer {OPENAI_API_KEY}",
+            "Content-Type": "application/json"
+        }
+        data = {
+            "model": "gpt-3.5-turbo",
+            "messages": [{"role": "user", "content": prompt}],
+            "max_tokens": 150,
+            "temperature": temperature
+        }
+        response = requests.post(OPENAI_API_URL, headers=headers, json=data)
+        
+        if response.status_code != 200:
+            print(f"Error: Received status code {response.status_code} from OpenAI API.")
+            print(response.text)
+            return ""
+        
+        return response.json()["choices"][0]["message"]["content"].strip()
 
-    scrollbar = Scrollbar(preview_window, command=text_area.yview)
-    scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-    text_area.config(yscrollcommand=scrollbar.set)
+    def get_spoken_file_from_eleven_labs(self, text, voice_id):
+        headers = {
+            "xi-api-key": ELEVEN_LABS_API_KEY,
+            "Content-Type": "application/json"
+        }
+        data = {
+            "text": text
+        }
+        response = requests.post(ELEVEN_LABS_API_URL.format(voice_id=voice_id), headers=headers, json=data)
+        return response.content
 
-    def confirm():
-        nonlocal chatgpt_response
-        chatgpt_response = text_area.get("1.0", tk.END).strip()
-        preview_window.destroy()
+    def preview_content(self, chatgpt_response):
+        self.preview_window = tk.Toplevel(self.root)
+        self.preview_window.title("Content Preview")
 
+        self.text_widget = Text(self.preview_window, wrap=tk.WORD, height=10, width=50)
+        self.text_widget.insert(tk.END, chatgpt_response)
+        self.text_widget.pack(padx=10, pady=10)
+
+        Button(self.preview_window, text="Confirm", command=self.confirm_content).pack(side=tk.LEFT, padx=5)
+        Button(self.preview_window, text="Regenerate", command=self.regenerate_content).pack(side=tk.LEFT, padx=5)
+        Button(self.preview_window, text="Edit", command=self.edit_content).pack(side=tk.LEFT, padx=5)
+        Button(self.preview_window, text="Start Again", command=self.start_again).pack(side=tk.LEFT, padx=5)
+
+    def confirm_content(self):
+        chatgpt_response = self.text_widget.get("1.0", tk.END).strip()
         voice_id = "21m00Tcm4TlvDq8ikWAM"
-        mp3_content = get_spoken_file_from_eleven_labs(chatgpt_response, voice_id)
-
-        # Set default filename
+        mp3_content = self.get_spoken_file_from_eleven_labs(chatgpt_response, voice_id)
+        
         current_date = datetime.now().strftime('%Y-%m-%d')
-        default_filename = f"{current_date}_{user_input.replace(' ', '_')}.mp3"
+        default_filename = f"{current_date}_{self.user_input.replace(' ', '_')}.mp3"
         filename = simpledialog.askstring("Filename", "Enter filename for the mp3:", initialvalue=default_filename)
-
+        
         with open(filename, "wb") as f:
             f.write(mp3_content)
-
+        
         messagebox.showinfo("Info", f"Saved the spoken file as {filename}")
+        self.preview_window.destroy()
 
-        # Option to start again
-        start_again = messagebox.askyesno("Start Again?", "Would you like to generate another mp3?")
-        if start_again:
-            generate_response()
+    def regenerate_content(self):
+        self.preview_window.destroy()
+        self.generate_response()
 
-    def regenerate():
-        preview_window.destroy()
-        regenerate_response = get_response_from_chatgpt(full_prompt, temperature)
-        content_preview_window(regenerate_response, user_input)
+    def edit_content(self):
+        self.text_widget.config(state=tk.NORMAL)
 
-    def start_over():
-        preview_window.destroy()
+    def start_again(self):
+        self.preview_window.destroy()
 
-    confirm_button = tk.Button(preview_window, text="Confirm", command=confirm)
-    confirm_button.pack(side=tk.LEFT, padx=10)
+    def generate_response(self):
+        hardcoded_prompt = "Write me 1 cool fact about each of these companies: "
+        self.user_input = simpledialog.askstring("Input", "Which 3 companies?")
+        
+        if not self.user_input:
+            return
+        
+        full_prompt = hardcoded_prompt + self.user_input
+        temperature = 0.7
+        chatgpt_response = self.get_response_from_chatgpt(full_prompt, temperature)
+        
+        self.preview_content(chatgpt_response)
 
-    regenerate_button = tk.Button(preview_window, text="Regenerate", command=regenerate)
-    regenerate_button.pack(side=tk.LEFT, padx=10)
-
-    edit_button = tk.Button(preview_window, text="Edit", command=lambda: text_area.focus_set())
-    edit_button.pack(side=tk.LEFT, padx=10)
-
-    start_over_button = tk.Button(preview_window, text="Start Over", command=start_over)
-    start_over_button.pack(side=tk.LEFT, padx=10)
-
-def generate_response():
-    hardcoded_prompt = "Write me 1 cool fact about each of these companies: "
-    user_input = simpledialog.askstring("Input", "Which 3 companies?")
-
-    if not user_input:
-        return
-
-    full_prompt = hardcoded_prompt + user_input
-    temperature = 0.7  # You can adjust this or ask the user for input
-    chatgpt_response
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = App(root)
+    root.mainloop()
