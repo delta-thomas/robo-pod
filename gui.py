@@ -9,31 +9,24 @@ import os
 # Load configuration from config.ini
 config = configparser.ConfigParser()
 
-# Check if config.ini exists
-if os.path.exists('config.ini'):
-    config.read('config.ini')
-    print("=== Configuration ===")
-    print("Configuration loaded successfully!")
-else:
-    print("config.ini not found!")
-    exit()
+def load_config():
+    if os.path.exists('config.ini'):
+        config.read('config.ini')
+    else:
+        print("config.ini not found!")
+        exit()
 
-# Check configuration sections
-if 'OpenAI' in config and 'ElevenLabs' in config and 'Texts' in config:
-    print("All expected sections are present in the config!")
-else:
-    print("Some sections are missing in the config!")
-    exit()
+load_config()
 
 # Print configuration values for verification
+print("=== Configuration ===")
+print("Configuration loaded successfully!")
 print("\n=== OpenAI Configuration ===")
 print("API Key:", config.get('OpenAI', 'API_KEY'))
 print("Model:", config.get('OpenAI', 'MODEL'))
-
 print("\n=== ElevenLabs Configuration ===")
 print("API Key:", config.get('ElevenLabs', 'API_KEY'))
 print("Voice ID:", config.get('ElevenLabs', 'VOICE_ID'))
-
 print("\n=== Text Configuration ===")
 print("PromptTweak:", config.get('Texts', 'PromptTweak'))
 print("Welcome:", config.get('Texts', 'Welcome'))
@@ -118,19 +111,40 @@ class App:
 
         tk.Label(self.frame, text="Settings").pack(pady=10)
 
+        self.settings_entries = {}
+        for section in config.sections():
+            for key, value in config.items(section):
+                tk.Label(self.frame, text=f"{section} - {key}").pack(pady=5)
+                entry = tk.Entry(self.frame, width=50)
+                entry.insert(0, value)
+                entry.pack(pady=5)
+                self.settings_entries[(section, key)] = entry
+
         self.select_music_button = tk.Button(self.frame, text="Select Intro Music", command=self.select_intro_music)
         self.select_music_button.pack(pady=10)
 
         self.selected_music_label = tk.Label(self.frame, text="", font=("Arial", 14, "italic"), fg="black")
         self.selected_music_label.pack(pady=5)
 
+        tk.Button(self.frame, text="Save", command=self.save_settings).pack(pady=10)
         tk.Button(self.frame, text="Back to Navigation", command=self.show_navigation).pack(pady=10)
 
-    def show_generation(self):
+    def select_intro_music(self):
+        self.intro_music_path = filedialog.askopenfilename(title="Select Intro Music", filetypes=[("MP3 Files", "*.mp3")])
         if not self.intro_music_path:
-            messagebox.showwarning("Warning", "Please select Intro Music from the Settings before proceeding.")
-            return
+            self.intro_music_path = "IntroMusic.mp3"
+        file_name = self.intro_music_path.split("/")[-1]
+        self.selected_music_label.config(text=f"Selected: {file_name}")
 
+    def save_settings(self):
+        for (section, key), entry in self.settings_entries.items():
+            config.set(section, key, entry.get())
+        with open('config.ini', 'w') as configfile:
+            config.write(configfile)
+        load_config()
+        messagebox.showinfo("Info", "Settings saved successfully!")
+
+    def show_generation(self):
         self.clear_frame()
         self.state = "generation"
 
@@ -144,31 +158,20 @@ class App:
 
         tk.Button(self.frame, text="Back to Navigation", command=self.show_navigation).pack(pady=10)
 
-    def clear_frame(self):
-        for widget in self.frame.winfo_children():
-            widget.destroy()
+    def show_preview(self, chatgpt_response):
+        self.clear_frame()
+        self.state = "preview"
 
-    def select_intro_music(self):
-        self.intro_music_path = filedialog.askopenfilename(title="Select Intro Music", filetypes=[("MP3 Files", "*.mp3")])
-        if not self.intro_music_path:
-            self.intro_music_path = "IntroMusic.mp3"
-        file_name = self.intro_music_path.split("/")[-1]
-        self.selected_music_label.config(text=f"Selected: {file_name}")
-
-    def preview_content(self, chatgpt_response):
-        self.preview_window = tk.Toplevel(self.root)
-        self.preview_window.title("Content Preview")
-
-        self.text_widget = Text(self.preview_window, wrap=tk.WORD, height=10, width=50)
+        self.text_widget = Text(self.frame, wrap=tk.WORD, height=10, width=50)
         self.text_widget.insert(tk.END, chatgpt_response)
         self.text_widget.pack(padx=10, pady=10)
 
-        button_frame = tk.Frame(self.preview_window)
+        button_frame = tk.Frame(self.frame)
         button_frame.pack(pady=20)
 
         Button(button_frame, text="Confirm", command=self.confirm_content).pack(side=tk.LEFT, padx=5)
         Button(button_frame, text="Regenerate", command=self.regenerate_content).pack(side=tk.LEFT, padx=5)
-        Button(button_frame, text="Start Again", command=self.start_again).pack(side=tk.LEFT, padx=5)
+        Button(button_frame, text="Start Again", command=self.show_generation).pack(side=tk.LEFT, padx=5)
 
     def confirm_content(self):
         chatgpt_response = self.text_widget.get("1.0", tk.END).strip()
@@ -187,19 +190,18 @@ class App:
         combine_mp3s(self.intro_music_path, save_path, save_path)
 
         messagebox.showinfo("Info", f"Saved the combined spoken file as {save_path}")
-        self.preview_window.destroy()
 
     def regenerate_content(self):
-        self.preview_window.destroy()
         self.generate_response()
 
-    def start_again(self):
-        self.preview_window.destroy()
+    def clear_frame(self):
+        for widget in self.frame.winfo_children():
+            widget.destroy()
 
     def generate_response(self):
         hardcoded_prompt = PROMPT_TWEAK + self.company_entry.get()
         chatgpt_response = get_response_from_chatgpt(hardcoded_prompt)
-        self.preview_content(chatgpt_response)
+        self.show_preview(chatgpt_response)
 
 if __name__ == "__main__":
     root = tk.Tk()
