@@ -8,3 +8,5 @@ Send to ElevenLabs to convert the text into an .mp3<br>
 Join this content with the welcome jingle<br>
 Save the file as a .mp3<br>
 Solve world peace<br>
+<br><br>
+To run, rename the default config to config.ini and enter your API keys
