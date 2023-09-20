@@ -1,6 +1,6 @@
 import requests
 import tkinter as tk
-from tkinter import simpledialog, messagebox, Text, Button, filedialog
+from tkinter import simpledialog, messagebox, Text, Button, filedialog, Entry, Label
 from datetime import datetime
 from pydub import AudioSegment
 import configparser
@@ -16,14 +16,14 @@ if os.path.exists('config.ini'):
     print("Configuration loaded successfully!")
 else:
     print("config.ini not found!")
-    exit()  # Exit the script if config.ini is not found
+    exit()
 
 # Check configuration sections
 if 'OpenAI' in config and 'ElevenLabs' in config and 'Texts' in config:
     print("All expected sections are present in the config!")
 else:
     print("Some sections are missing in the config!")
-    exit()  # Exit the script if some sections are missing
+    exit()
 
 # Print configuration values for verification
 print("\n=== OpenAI Configuration ===")
@@ -95,26 +95,58 @@ def combine_mp3s(intro_path, generated_path, output_path):
 class App:
     def __init__(self, root):
         self.root = root
-        self.root.title("ChatGPT to MP3")
+        self.root.title("Delta Stock Market Buffet generator")
         self.intro_music_path = "IntroMusic.mp3"
-        self.user_input = simpledialog.askstring("Input", "Which 3 companies?")
-        if not self.user_input:
-            exit()  # Exit the app if no input is provided
+        self.state = "navigation"  # Initial state
 
         self.frame = tk.Frame(self.root, padx=20, pady=20)
         self.frame.pack(padx=10, pady=10)
 
-        self.label = tk.Label(self.frame, text="Generate spoken content from ChatGPT")
-        self.label.pack(pady=10)
+        self.show_navigation()
+
+    def show_navigation(self):
+        self.clear_frame()
+        self.state = "navigation"
+
+        tk.Label(self.frame, text="Welcome to the Delta Stock Market Buffet generator!").pack(pady=10)
+        tk.Button(self.frame, text="Settings", command=self.show_settings).pack(pady=10)
+        tk.Button(self.frame, text="Generate MP3", command=self.show_generation).pack(pady=10)
+
+    def show_settings(self):
+        self.clear_frame()
+        self.state = "settings"
+
+        tk.Label(self.frame, text="Settings").pack(pady=10)
 
         self.select_music_button = tk.Button(self.frame, text="Select Intro Music", command=self.select_intro_music)
         self.select_music_button.pack(pady=10)
 
-        self.selected_music_label = tk.Label(self.frame, text="", font=("Arial", 10, "italic"), fg="blue")
+        self.selected_music_label = tk.Label(self.frame, text="", font=("Arial", 14, "italic"), fg="black")
         self.selected_music_label.pack(pady=5)
 
-        self.generate_button = Button(self.frame, text="Generate MP3", command=self.generate_response)
-        self.generate_button.pack()
+        tk.Button(self.frame, text="Back to Navigation", command=self.show_navigation).pack(pady=10)
+
+    def show_generation(self):
+        if not self.intro_music_path:
+            messagebox.showwarning("Warning", "Please select Intro Music from the Settings before proceeding.")
+            return
+
+        self.clear_frame()
+        self.state = "generation"
+
+        self.company_label = tk.Label(self.frame, text="Which company to focus on")
+        self.company_label.pack(pady=5)
+        self.company_entry = tk.Entry(self.frame, width=50)
+        self.company_entry.pack(pady=5)
+
+        self.generate_button = tk.Button(self.frame, text="Generate MP3", command=self.generate_response)
+        self.generate_button.pack(pady=10)
+
+        tk.Button(self.frame, text="Back to Navigation", command=self.show_navigation).pack(pady=10)
+
+    def clear_frame(self):
+        for widget in self.frame.winfo_children():
+            widget.destroy()
 
     def select_intro_music(self):
         self.intro_music_path = filedialog.askopenfilename(title="Select Intro Music", filetypes=[("MP3 Files", "*.mp3")])
@@ -136,7 +168,6 @@ class App:
 
         Button(button_frame, text="Confirm", command=self.confirm_content).pack(side=tk.LEFT, padx=5)
         Button(button_frame, text="Regenerate", command=self.regenerate_content).pack(side=tk.LEFT, padx=5)
-        Button(button_frame, text="Edit", command=self.edit_content).pack(side=tk.LEFT, padx=5)
         Button(button_frame, text="Start Again", command=self.start_again).pack(side=tk.LEFT, padx=5)
 
     def confirm_content(self):
@@ -144,7 +175,7 @@ class App:
         mp3_content = get_spoken_file_from_eleven_labs(WELCOME_TEXT + chatgpt_response)
 
         current_date = datetime.now().strftime('%Y-%m-%d')
-        default_filename = f"{current_date}_{self.user_input.replace(' ', '_')}.mp3"
+        default_filename = f"{current_date}_{self.company_entry.get().replace(' ', '_')}.mp3"
         save_path = filedialog.asksaveasfilename(title="Save MP3 As", initialfile=default_filename, filetypes=[("MP3 Files", "*.mp3")])
 
         if not save_path:
@@ -162,14 +193,11 @@ class App:
         self.preview_window.destroy()
         self.generate_response()
 
-    def edit_content(self):
-        self.text_widget.config(state=tk.NORMAL)
-
     def start_again(self):
         self.preview_window.destroy()
 
     def generate_response(self):
-        hardcoded_prompt = PROMPT_TWEAK + self.user_input
+        hardcoded_prompt = PROMPT_TWEAK + self.company_entry.get()
         chatgpt_response = get_response_from_chatgpt(hardcoded_prompt)
         self.preview_content(chatgpt_response)
 
