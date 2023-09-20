@@ -11,24 +11,33 @@ def show_generation(main_window, back_callback):
 
     frame = main_window.frame
 
-    company_label = tk.Label(frame, text="Which company to focus on")
+    company_label = tk.Label(frame, text="Paste up to 3 WIIM snippets")
     company_label.pack(pady=5)
-    company_entry = tk.Entry(frame, width=50)
-    company_entry.pack(pady=5)
 
-    generate_button = tk.Button(frame, text="Generate MP3", command=lambda: generate_response(main_window, company_entry.get()))
+    # Three company entry boxes
+    company_entry1 = tk.Entry(frame, width=50)
+    company_entry1.pack(pady=5)
+    company_entry2 = tk.Entry(frame, width=50)
+    company_entry2.pack(pady=5)
+    company_entry3 = tk.Entry(frame, width=50)
+    company_entry3.pack(pady=5)
+
+    generate_button = tk.Button(frame, text="Generate Script", command=lambda: generate_response(main_window, company_entry1.get(), company_entry2.get(), company_entry3.get()))
     generate_button.pack(pady=10)
 
-    tk.Button(frame, text="Back to Navigation", command=back_callback).pack(pady=10)
+    tk.Button(frame, text="Back Home", command=back_callback).pack(pady=10)
 
-def generate_response(main_window, company_name):
+def generate_response(main_window, company_name1, company_name2, company_name3):
+    # Concatenate the company names with square brackets
+    combined_company_name = "[" + company_name1 + "], [" + company_name2 + "], [" + company_name3 + "]"
+
     openai_config = get_openai_config()
     elevenlabs_config = get_elevenlabs_config()
     texts_config = get_texts_config()
 
-    hardcoded_prompt = texts_config["prompttweak"] + company_name  # Corrected the key here
+    hardcoded_prompt = texts_config["prompttweak"] + combined_company_name
     chatgpt_response = get_response_from_chatgpt(hardcoded_prompt, **openai_config)
-    show_preview(main_window, chatgpt_response, company_name, elevenlabs_config, texts_config)
+    show_preview(main_window, chatgpt_response, combined_company_name, elevenlabs_config, texts_config)
 
 def show_preview(main_window, chatgpt_response, company_name, elevenlabs_config, texts_config):
     main_window.clear_frame()
