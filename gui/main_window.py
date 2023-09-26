@@ -17,7 +17,7 @@ class MainWindow:
 
         tk.Label(self.frame, text="Welcome to the Delta Stock Market Buffet generator!").pack(pady=10)
         tk.Button(self.frame, text="Settings", command=lambda: show_settings(self, self.show_navigation)).pack(pady=10)
-        tk.Button(self.frame, text="Generate MP3", command=lambda: show_generation(self, self.show_navigation)).pack(pady=10)
+        tk.Button(self.frame, text="Generate Podcast", command=lambda: show_generation(self, self.show_navigation)).pack(pady=10)
 
     def clear_frame(self):
         for widget in self.frame.winfo_children():

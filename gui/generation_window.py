@@ -52,7 +52,7 @@ def show_preview(main_window, chatgpt_response, company_name, elevenlabs_config,
 
     tk.Button(button_frame, text="Confirm", command=lambda: confirm_content(text_widget.get("1.0", tk.END).strip(), company_name, elevenlabs_config, texts_config)).pack(side=tk.LEFT, padx=5)
     tk.Button(button_frame, text="Regenerate", command=lambda: generate_response(main_window, company_name)).pack(side=tk.LEFT, padx=5)
-    tk.Button(button_frame, text="Start Again", command=lambda: show_generation(main_window, main_window.show_navigation)).pack(side=tk.LEFT, padx=5)
+    tk.Button(button_frame, text="Return to the beginning", command=lambda: show_generation(main_window, main_window.show_navigation)).pack(side=tk.LEFT, padx=5)
 
 def confirm_content(chatgpt_response, company_name, elevenlabs_config, texts_config):
     mp3_content = get_spoken_file_from_eleven_labs(texts_config["welcome"] + chatgpt_response, **elevenlabs_config)
