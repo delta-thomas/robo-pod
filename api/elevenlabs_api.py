@@ -11,9 +11,9 @@ def get_spoken_file_from_eleven_labs(text, API_KEY, VOICE_ID):
         "text": text,
         "model_id": "eleven_multilingual_v2",
         "voice_settings": {
-            "stability": 0.5,
+            "stability": 0.55,
             "similarity_boost": 0.75,
-            "style": 0.5,
+            "style": 0.25,
             "use_speaker_boost": True
         }
     }
