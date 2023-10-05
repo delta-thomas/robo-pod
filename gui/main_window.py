@@ -1,6 +1,11 @@
 import tkinter as tk
 from .settings_window import show_settings
 from .generation_window import show_generation
+from .phonetics_window import show_phonetics
+
+
+
+
 
 class MainWindow:
     def __init__(self, root):
@@ -18,6 +23,7 @@ class MainWindow:
         tk.Label(self.frame, text="Welcome to the Delta Stock Market Buffet generator!").pack(pady=10)
         tk.Button(self.frame, text="Settings", command=lambda: show_settings(self, self.show_navigation)).pack(pady=10)
         tk.Button(self.frame, text="Generate MP3", command=lambda: show_generation(self, self.show_navigation)).pack(pady=10)
+        tk.Button(self.frame, text="Phonetics", command=lambda: show_phonetics(self)).pack(pady=10)
 
     def clear_frame(self):
         for widget in self.frame.winfo_children():
