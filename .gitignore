@@ -2,3 +2,4 @@
 
 # Configuration file
 config.ini
+*.pyc
